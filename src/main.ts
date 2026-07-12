@@ -1,25 +1,20 @@
 import './style.css';
+import { createViewport, resizeViewport } from './core/viewport';
 
 const cv = document.getElementById('game') as HTMLCanvasElement;
-const ctx = cv.getContext('2d')!;
+const vp = createViewport(cv);
 
-let dpr = 1;
-
-/* resize() — 1:1 з прототипу (без buildGround, його ще нема) */
-function resize(): void {
-  dpr = Math.min(window.devicePixelRatio || 1, 2);
-  cv.width = innerWidth * dpr;
-  cv.height = innerHeight * dpr;
-  cv.style.width = innerWidth + 'px';
-  cv.style.height = innerHeight + 'px';
-  draw();
-}
-addEventListener('resize', resize);
-
+/* Тимчасова заливка, поки нема render/ — гра ще не портована */
 function draw(): void {
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.fillStyle = '#151a10';
-  ctx.fillRect(0, 0, innerWidth, innerHeight);
+  vp.ctx.setTransform(vp.dpr, 0, 0, vp.dpr, 0, 0);
+  vp.ctx.fillStyle = '#151a10';
+  vp.ctx.fillRect(0, 0, innerWidth, innerHeight);
 }
 
-resize();
+addEventListener('resize', () => {
+  resizeViewport(vp);
+  draw();
+});
+
+resizeViewport(vp);
+draw();
