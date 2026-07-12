@@ -32,6 +32,9 @@ export interface Player {
   inv: number;
   lastHit: number;
   step: number;
+  /** Рішення №2 (CLAUDE.md): у прототипі рахувався в drawCossack з keysVec();
+      тут виставляється в updatePlayer, рендер тільки читає. */
+  walking: boolean;
 }
 
 /** Обʼєкт із spawnEnemy. */

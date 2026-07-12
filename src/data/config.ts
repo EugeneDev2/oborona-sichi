@@ -116,6 +116,8 @@ export const PLAYER = {
   CLAMP_MARGIN: 0.25, // clamp позиції: 0.25 .. GW-0.25
   HURT_SHAKE: 4,
   LAST_HIT_INIT: 99, // стартове lastHit у freshState — "давно не били", реген доступний одразу
+  MOVE_DEADZONE: 0.01, // рух тільки якщо |вектор| > 0.01 (update у прототипі)
+  WALK_ANIM_DEADZONE: 0.05, // анімація ходьби якщо |mvx,mvy| > 0.05 (drawCossack у прототипі)
 } as const;
 
 export const ATTACK = {
@@ -182,6 +184,8 @@ export const SICH_FX = {
 export const FX = {
   SHAKE_DECAY: 14, // shake -= 14 * dt
   FLOATER_RISE: 26, // floater.z += 26 * dt
+  FLOATER_Z: 34, // стартова висота флоатера
+  FLOATER_LIFE: 1, // стартовий life флоатера
   /* puff(): параметри за замовчуванням і фізика частинок */
   PUFF_SPD_DEFAULT: 2.2,
   PUFF_UP_DEFAULT: 3,

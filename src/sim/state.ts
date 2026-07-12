@@ -73,6 +73,7 @@ export function freshState(): GameState {
       inv: 0,
       lastHit: PLAYER.LAST_HIT_INIT,
       step: 0,
+      walking: false,
     },
     camX,
     camY,
