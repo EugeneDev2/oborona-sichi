@@ -115,6 +115,7 @@ export const PLAYER = {
   STEP_ANIM: 10, // p.step += dt * 10
   CLAMP_MARGIN: 0.25, // clamp позиції: 0.25 .. GW-0.25
   HURT_SHAKE: 4,
+  LAST_HIT_INIT: 99, // стартове lastHit у freshState — "давно не били", реген доступний одразу
 } as const;
 
 export const ATTACK = {
