@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Оборона Січі</title>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<div id="hud">
+  <div class="plate" id="waveInfo">Хвиля <b id="waveN">1</b> · <span id="phaseT">будова</span></div>
+  <div id="sichWrap">
+    <div class="lbl">Січ</div>
+    <div id="sichBar"><div id="sichFill"></div></div>
+  </div>
+  <div class="plate" id="resPlate">
+    🪵 <b id="woodN">50</b> | 🪙 <b id="goldN">50</b> | 🌾 <b id="grainN">40</b>
+  </div>
+</div>
+
+<div id="hpWrap">
+  <div class="lbl">Козак Мамай</div>
+  <div id="hpBar"><div id="hpFill"></div></div>
+</div>
+
+<div id="buildBar">
+  <button class="btool" id="toolPal">Частокіл<small>15 🪵</small></button>
+  <button class="btool" id="toolCan">Гармата<small>40 🪙</small></button>
+  <button class="btool" id="toolPeas">Селянин<small>20 🌾</small></button>
+  <button class="btool" id="waveBtn">⚔ Хвиля!<small id="waveTimer">15 с</small></button>
+</div>
+
+<div id="banner"></div>
+<div id="dbg">F — показати шлях орди</div>
+
+<div class="overlay" id="startOv">
+  <div class="scroll">
+    <h1>Оборона Січі</h1>
+    <h2>«Економіка та війна»</h2>
+    <p>Бігай степом, рубай орду шаблею. Будуй <b>частокіл</b> і <b>гармати</b>, щоб захистити Січ.</p>
+    <div class="keys">
+      <p>🌾 <b>Економіка:</b> Найми селянина, а потім <b>клікніть по лісу, золотій копальні чи пшениці</b> на карті. Селянин піде туди і почне постійно носити ресурси в Січ!</p>
+      <p>🏃 Рух — <b>WASD</b> / стрілки (телефон — джойстик)</p>
+      <p>🗡 Удар — <b>Пробіл</b> або <b>J</b> (телефон — червона кнопка)</p>
+      <p>🔨 Будова — <b>1</b>/<b>2</b>, тоді клік по клітинці. Правий клік — знести (поверне половину)</p>
+      <p>🧠 Орда <b>шукає обхід</b> навколо стін. Лиши коридор — і заведи їх під гармати.</p>
+    </div>
+    <button id="startBtn">До бою!</button>
+  </div>
+</div>
+
+<div class="overlay hidden" id="endOv">
+  <div class="scroll">
+    <h1 id="endTitle">Січ впала…</h1>
+    <p id="stats"></p>
+    <button id="againBtn">Ще раз!</button>
+  </div>
+</div>
+
+<div id="stick"><div id="knob"></div></div>
+<button id="atkBtn">🗡</button>
+
+<script type="module" src="/src/main.ts"></script>
+</body>
+</html>

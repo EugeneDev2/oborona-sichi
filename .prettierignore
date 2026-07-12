@@ -1,0 +1,8 @@
+dist
+node_modules
+_prototype.html
+*.md
+
+# дослівні копії з прототипу — не переформатовувати, щоб diff зі звіркою був чистим
+index.html
+src/style.css

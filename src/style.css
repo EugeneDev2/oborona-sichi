@@ -1,0 +1,58 @@
+:root{
+  --ink:#2a1d10; --parch:#e8d9b0; --wood:#6b4a2a;
+  --crimson:#a5252b; --gold:#d9a441;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:#151a10;font-family:Georgia,'Times New Roman',serif;
+  -webkit-user-select:none;user-select:none;touch-action:none}
+#game{position:fixed;inset:0;display:block}
+#hud{position:fixed;top:0;left:0;right:0;display:flex;align-items:center;gap:10px;
+  padding:8px 12px;pointer-events:none;z-index:5}
+.plate{background:rgba(30,22,12,.82);border:1px solid #8a6b3a;border-radius:6px;
+  color:var(--parch);padding:5px 12px;font-size:15px;white-space:nowrap;
+  box-shadow:0 2px 6px rgba(0,0,0,.4)}
+#waveInfo b{color:var(--gold)}
+#sichWrap{flex:1;max-width:340px;margin:0 auto}
+#sichWrap .lbl{font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);text-align:center;margin-bottom:2px}
+#sichBar{height:12px;border:1px solid #8a6b3a;border-radius:6px;background:#1c130a;overflow:hidden}
+#sichFill{height:100%;width:100%;background:linear-gradient(#c8452f,#8f2320);transition:width .2s}
+#resPlate b{color:var(--gold); display:inline-block; min-width:20px; text-align:left}
+#hpWrap{position:fixed;left:12px;bottom:88px;width:150px;z-index:5;pointer-events:none}
+#hpWrap .lbl{font-size:11px;letter-spacing:1px;color:var(--parch);opacity:.85;margin-bottom:2px}
+#hpBar{height:9px;border:1px solid #8a6b3a;border-radius:5px;background:#1c130a;overflow:hidden}
+#hpFill{height:100%;width:100%;background:linear-gradient(#7fae4a,#4e7a2b)}
+#buildBar{position:fixed;left:50%;bottom:10px;transform:translateX(-50%);display:flex;gap:8px;z-index:6}
+.btool{background:linear-gradient(#5c412a,#42301e);border:1px solid #8a6b3a;border-radius:8px;
+  color:var(--parch);padding:7px 12px;font-family:inherit;font-size:14px;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;min-width:84px;line-height:1.25;
+  box-shadow:0 3px 6px rgba(0,0,0,.45)}
+.btool small{color:var(--gold);font-size:12px}
+.btool.sel{outline:2px solid var(--gold);background:linear-gradient(#7a5836,#553d25)}
+.btool:disabled{opacity:.45;cursor:default}
+#waveBtn{background:linear-gradient(#8f2a24,#6d1c18)}
+#banner{position:fixed;top:22%;left:50%;transform:translateX(-50%);font-size:34px;color:var(--parch);
+  text-shadow:0 2px 0 #000,0 0 18px rgba(0,0,0,.6);opacity:0;transition:opacity .4s;pointer-events:none;z-index:7;
+  letter-spacing:1px;text-align:center}
+.overlay{position:fixed;inset:0;background:rgba(12,9,4,.78);display:flex;align-items:center;justify-content:center;z-index:10}
+.scroll{background:linear-gradient(#efe0b8,#dcc794);color:var(--ink);border:2px solid #8a6b3a;border-radius:10px;
+  padding:26px 30px;max-width:540px;width:92%;box-shadow:0 12px 40px rgba(0,0,0,.6);text-align:center}
+.scroll h1{font-size:30px;margin-bottom:4px;color:#5a1512}
+.scroll h2{font-size:16px;font-weight:normal;font-style:italic;margin-bottom:14px}
+.scroll p{font-size:15px;line-height:1.5;margin:8px 0;text-align:left}
+.scroll .keys{background:rgba(90,60,25,.12);border-radius:8px;padding:10px 14px;margin:10px 0}
+.scroll button{margin-top:14px;font-family:inherit;font-size:18px;padding:10px 30px;cursor:pointer;
+  background:linear-gradient(#a5252b,#7c1a1e);color:var(--parch);border:1px solid #5a1210;border-radius:8px;
+  box-shadow:0 4px 10px rgba(0,0,0,.4)}
+.scroll button:active{transform:translateY(1px)}
+#stats{font-size:17px;margin:10px 0;text-align:center!important}
+.hidden{display:none!important}
+#stick{position:fixed;left:26px;bottom:120px;width:110px;height:110px;border-radius:50%;
+  border:2px solid rgba(232,217,176,.35);background:rgba(30,22,12,.25);z-index:6;display:none}
+#knob{position:absolute;left:50%;top:50%;width:46px;height:46px;border-radius:50%;
+  background:rgba(232,217,176,.55);transform:translate(-50%,-50%)}
+#atkBtn{position:fixed;right:26px;bottom:120px;width:84px;height:84px;border-radius:50%;z-index:6;display:none;
+  background:radial-gradient(circle at 35% 30%,#c0392f,#7c1a1e);border:2px solid #e8d9b0;color:#e8d9b0;
+  font-size:34px;box-shadow:0 4px 12px rgba(0,0,0,.5)}
+body.touch #stick, body.touch #atkBtn{display:block}
+#dbg{position:fixed;right:10px;bottom:76px;z-index:6;font-size:11px;color:#e8d9b0;opacity:.5;pointer-events:none}
+@media (max-width:640px){ #hud{font-size:13px; flex-wrap:wrap} .plate{font-size:13px;padding:4px 8px} #banner{font-size:26px} }

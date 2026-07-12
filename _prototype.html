@@ -1,0 +1,1341 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Оборона Січі</title>
+<style>
+  :root{
+    --ink:#2a1d10; --parch:#e8d9b0; --wood:#6b4a2a;
+    --crimson:#a5252b; --gold:#d9a441;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;overflow:hidden;background:#151a10;font-family:Georgia,'Times New Roman',serif;
+    -webkit-user-select:none;user-select:none;touch-action:none}
+  #game{position:fixed;inset:0;display:block}
+  #hud{position:fixed;top:0;left:0;right:0;display:flex;align-items:center;gap:10px;
+    padding:8px 12px;pointer-events:none;z-index:5}
+  .plate{background:rgba(30,22,12,.82);border:1px solid #8a6b3a;border-radius:6px;
+    color:var(--parch);padding:5px 12px;font-size:15px;white-space:nowrap;
+    box-shadow:0 2px 6px rgba(0,0,0,.4)}
+  #waveInfo b{color:var(--gold)}
+  #sichWrap{flex:1;max-width:340px;margin:0 auto}
+  #sichWrap .lbl{font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);text-align:center;margin-bottom:2px}
+  #sichBar{height:12px;border:1px solid #8a6b3a;border-radius:6px;background:#1c130a;overflow:hidden}
+  #sichFill{height:100%;width:100%;background:linear-gradient(#c8452f,#8f2320);transition:width .2s}
+  #resPlate b{color:var(--gold); display:inline-block; min-width:20px; text-align:left}
+  #hpWrap{position:fixed;left:12px;bottom:88px;width:150px;z-index:5;pointer-events:none}
+  #hpWrap .lbl{font-size:11px;letter-spacing:1px;color:var(--parch);opacity:.85;margin-bottom:2px}
+  #hpBar{height:9px;border:1px solid #8a6b3a;border-radius:5px;background:#1c130a;overflow:hidden}
+  #hpFill{height:100%;width:100%;background:linear-gradient(#7fae4a,#4e7a2b)}
+  #buildBar{position:fixed;left:50%;bottom:10px;transform:translateX(-50%);display:flex;gap:8px;z-index:6}
+  .btool{background:linear-gradient(#5c412a,#42301e);border:1px solid #8a6b3a;border-radius:8px;
+    color:var(--parch);padding:7px 12px;font-family:inherit;font-size:14px;cursor:pointer;
+    display:flex;flex-direction:column;align-items:center;min-width:84px;line-height:1.25;
+    box-shadow:0 3px 6px rgba(0,0,0,.45)}
+  .btool small{color:var(--gold);font-size:12px}
+  .btool.sel{outline:2px solid var(--gold);background:linear-gradient(#7a5836,#553d25)}
+  .btool:disabled{opacity:.45;cursor:default}
+  #waveBtn{background:linear-gradient(#8f2a24,#6d1c18)}
+  #banner{position:fixed;top:22%;left:50%;transform:translateX(-50%);font-size:34px;color:var(--parch);
+    text-shadow:0 2px 0 #000,0 0 18px rgba(0,0,0,.6);opacity:0;transition:opacity .4s;pointer-events:none;z-index:7;
+    letter-spacing:1px;text-align:center}
+  .overlay{position:fixed;inset:0;background:rgba(12,9,4,.78);display:flex;align-items:center;justify-content:center;z-index:10}
+  .scroll{background:linear-gradient(#efe0b8,#dcc794);color:var(--ink);border:2px solid #8a6b3a;border-radius:10px;
+    padding:26px 30px;max-width:540px;width:92%;box-shadow:0 12px 40px rgba(0,0,0,.6);text-align:center}
+  .scroll h1{font-size:30px;margin-bottom:4px;color:#5a1512}
+  .scroll h2{font-size:16px;font-weight:normal;font-style:italic;margin-bottom:14px}
+  .scroll p{font-size:15px;line-height:1.5;margin:8px 0;text-align:left}
+  .scroll .keys{background:rgba(90,60,25,.12);border-radius:8px;padding:10px 14px;margin:10px 0}
+  .scroll button{margin-top:14px;font-family:inherit;font-size:18px;padding:10px 30px;cursor:pointer;
+    background:linear-gradient(#a5252b,#7c1a1e);color:var(--parch);border:1px solid #5a1210;border-radius:8px;
+    box-shadow:0 4px 10px rgba(0,0,0,.4)}
+  .scroll button:active{transform:translateY(1px)}
+  #stats{font-size:17px;margin:10px 0;text-align:center!important}
+  .hidden{display:none!important}
+  #stick{position:fixed;left:26px;bottom:120px;width:110px;height:110px;border-radius:50%;
+    border:2px solid rgba(232,217,176,.35);background:rgba(30,22,12,.25);z-index:6;display:none}
+  #knob{position:absolute;left:50%;top:50%;width:46px;height:46px;border-radius:50%;
+    background:rgba(232,217,176,.55);transform:translate(-50%,-50%)}
+  #atkBtn{position:fixed;right:26px;bottom:120px;width:84px;height:84px;border-radius:50%;z-index:6;display:none;
+    background:radial-gradient(circle at 35% 30%,#c0392f,#7c1a1e);border:2px solid #e8d9b0;color:#e8d9b0;
+    font-size:34px;box-shadow:0 4px 12px rgba(0,0,0,.5)}
+  body.touch #stick, body.touch #atkBtn{display:block}
+  #dbg{position:fixed;right:10px;bottom:76px;z-index:6;font-size:11px;color:#e8d9b0;opacity:.5;pointer-events:none}
+  @media (max-width:640px){ #hud{font-size:13px; flex-wrap:wrap} .plate{font-size:13px;padding:4px 8px} #banner{font-size:26px} }
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<div id="hud">
+  <div class="plate" id="waveInfo">Хвиля <b id="waveN">1</b> · <span id="phaseT">будова</span></div>
+  <div id="sichWrap">
+    <div class="lbl">Січ</div>
+    <div id="sichBar"><div id="sichFill"></div></div>
+  </div>
+  <div class="plate" id="resPlate">
+    🪵 <b id="woodN">50</b> | 🪙 <b id="goldN">50</b> | 🌾 <b id="grainN">40</b>
+  </div>
+</div>
+
+<div id="hpWrap">
+  <div class="lbl">Козак Мамай</div>
+  <div id="hpBar"><div id="hpFill"></div></div>
+</div>
+
+<div id="buildBar">
+  <button class="btool" id="toolPal">Частокіл<small>15 🪵</small></button>
+  <button class="btool" id="toolCan">Гармата<small>40 🪙</small></button>
+  <button class="btool" id="toolPeas">Селянин<small>20 🌾</small></button>
+  <button class="btool" id="waveBtn">⚔ Хвиля!<small id="waveTimer">15 с</small></button>
+</div>
+
+<div id="banner"></div>
+<div id="dbg">F — показати шлях орди</div>
+
+<div class="overlay" id="startOv">
+  <div class="scroll">
+    <h1>Оборона Січі</h1>
+    <h2>«Економіка та війна»</h2>
+    <p>Бігай степом, рубай орду шаблею. Будуй <b>частокіл</b> і <b>гармати</b>, щоб захистити Січ.</p>
+    <div class="keys">
+      <p>🌾 <b>Економіка:</b> Найми селянина, а потім <b>клікніть по лісу, золотій копальні чи пшениці</b> на карті. Селянин піде туди і почне постійно носити ресурси в Січ!</p>
+      <p>🏃 Рух — <b>WASD</b> / стрілки (телефон — джойстик)</p>
+      <p>🗡 Удар — <b>Пробіл</b> або <b>J</b> (телефон — червона кнопка)</p>
+      <p>🔨 Будова — <b>1</b>/<b>2</b>, тоді клік по клітинці. Правий клік — знести (поверне половину)</p>
+      <p>🧠 Орда <b>шукає обхід</b> навколо стін. Лиши коридор — і заведи їх під гармати.</p>
+    </div>
+    <button id="startBtn">До бою!</button>
+  </div>
+</div>
+
+<div class="overlay hidden" id="endOv">
+  <div class="scroll">
+    <h1 id="endTitle">Січ впала…</h1>
+    <p id="stats"></p>
+    <button id="againBtn">Ще раз!</button>
+  </div>
+</div>
+
+<div id="stick"><div id="knob"></div></div>
+<button id="atkBtn">🗡</button>
+
+<script>
+'use strict';
+/* ============================================================
+   ОБОРОНА СІЧІ — 2.5D ізометричний екшн + tower defense + економіка
+   ============================================================ */
+const $ = id => document.getElementById(id);
+const cv = $('game'), ctx = cv.getContext('2d');
+
+const GW = 31, GH = 31;
+const TW = 64, TH = 32;
+const SICH = {tx: 15, ty: 15, cx: 15.5, cy: 15.5};
+const COST = {pal: 15, can: 40, peas: 20};
+
+let ox = 0, oy = 0, dpr = 1;
+let G, showFlow = false;
+
+function freshState(){
+  const startX = 15.5, startY = 18.2;
+  
+  // Генерація ресурсів на карті
+  const mapRes = new Map();
+  const addRes = (type, count) => {
+    let placed = 0;
+    while(placed < count) {
+      const tx = Math.floor(Math.random() * GW);
+      const ty = Math.floor(Math.random() * GH);
+      // Не спавнимо ресурси впритул до Січі
+      if (Math.abs(tx - SICH.tx) <= 3 && Math.abs(ty - SICH.ty) <= 3) continue;
+      const k = key(tx, ty);
+      if (!mapRes.has(k)) {
+        mapRes.set(k, { type, tx, ty });
+        placed++;
+      }
+    }
+  };
+  
+  addRes('gold', 2);   // Рівно 2 копальні на всю карту!
+  addRes('wood', 80);  // Багато лісу
+  addRes('grain', 60); // Багато пшениці
+
+  return {
+    running:false, over:false,
+    wave:1, phase:'build', phaseT:15,
+    spawnQueue:[], spawnT:0,
+    res: { wood: 50, gold: 50, grain: 40 },
+    kills:0,
+    sichHp:600, sichMax:600, sichFlash:0,
+    structures:new Map(),
+    mapRes: mapRes,
+    enemies:[], projectiles:[], arrows:[], particles:[], floaters:[], peasants:[],
+    player:{x:startX, y:startY, hp:100, max:100, fx:0, fy:1, mvx:0, mvy:0,
+            atkCd:0, swing:0, dead:0, inv:0, lastHit:99, step:0},
+    camX: (startX - startY) * TW / 2,
+    camY: (startX + startY) * TH / 2,
+    tool:null, shake:0, time:0,
+    flow:null, flowBrute:null
+  };
+}
+
+/* ---------- ізометрія ---------- */
+const isoX = (x,y)=> ox + (x-y)*TW/2;
+const isoY = (x,y)=> oy + (x+y)*TH/2;
+function tileFromScreen(sx,sy){
+  const a=(sx-ox)/(TW/2), b=(sy-oy)/(TH/2);
+  return [Math.floor((a+b)/2), Math.floor((b-a)/2)];
+}
+const key=(x,y)=>x+','+y;
+const idx=(x,y)=>y*GW+x;
+const inGrid=(x,y)=>x>=0&&y>=0&&x<GW&&y<GH;
+function isSich(x,y){ return x===SICH.tx&&y===SICH.ty; }
+
+function blocked(tx,ty){
+  if(!inGrid(tx,ty)) return false; 
+  if(isSich(tx,ty)) return true;
+  if(G.structures.has(key(tx,ty))) return true;
+  if(G.mapRes.has(key(tx,ty))) return true; // Ресурси теж блокують рух (як стіни)
+  return false;
+}
+
+/* ============================================================
+   FLOW FIELD — Дейкстра від Січі назад по всій сітці.
+   ============================================================ */
+const NB = [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
+
+function computeFlow(wallCost){
+  const dist = new Float64Array(GW*GH).fill(Infinity);
+  const dir  = new Int8Array(GW*GH*2);
+  const pq = [];
+  const push=(d,x,y)=>{ pq.push({d,x,y}); };
+  for(const [dx,dy] of NB){
+    const x=SICH.tx+dx, y=SICH.ty+dy;
+    if(!inGrid(x,y)) continue;
+    let c = 1;
+    if (G.structures.has(key(x,y)) || G.mapRes.has(key(x,y))) c = wallCost;
+    dist[idx(x,y)] = c;
+    dir[idx(x,y)*2] = -dx; dir[idx(x,y)*2+1] = -dy;
+    push(c,x,y);
+  }
+  while(pq.length){
+    let bi=0;
+    for(let i=1;i<pq.length;i++) if(pq[i].d<pq[bi].d) bi=i;
+    const cur=pq.splice(bi,1)[0];
+    if(cur.d > dist[idx(cur.x,cur.y)] + 1e-9) continue;
+    for(const [dx,dy] of NB){
+      const nx=cur.x+dx, ny=cur.y+dy;
+      if(!inGrid(nx,ny)||isSich(nx,ny)) continue;
+      const diag = (dx!==0&&dy!==0) ? 1.414 : 1;
+      let cell = 1;
+      if (G.structures.has(key(nx,ny)) || G.mapRes.has(key(nx,ny))) cell = wallCost;
+      const nd = cur.d + cell*diag;
+      if(nd < dist[idx(nx,ny)] - 0.0001){
+        dist[idx(nx,ny)] = nd;
+        dir[idx(nx,ny)*2] = -dx; dir[idx(nx,ny)*2+1] = -dy;
+        push(nd,nx,ny);
+      }
+    }
+  }
+  return {dist,dir};
+}
+function recomputeFlow(){
+  G.flow      = computeFlow(14);
+  G.flowBrute = computeFlow(3);
+}
+function flowDir(e){
+  const tx=Math.floor(e.x), ty=Math.floor(e.y);
+  if(!inGrid(tx,ty)){
+    const dx=SICH.cx-e.x, dy=SICH.cy-e.y, d=Math.hypot(dx,dy)||1;
+    return [dx/d, dy/d, null];
+  }
+  const f = (e.type==='murza') ? G.flowBrute : G.flow;
+  const i = idx(tx,ty);
+  const dx = f.dir[i*2], dy = f.dir[i*2+1];
+  if(dx===0&&dy===0){
+    const ddx=SICH.cx-e.x, ddy=SICH.cy-e.y, d=Math.hypot(ddx,ddy)||1;
+    return [ddx/d, ddy/d, null];
+  }
+  const nx=tx+dx, ny=ty+dy;
+  const tgx=nx+0.5, tgy=ny+0.5;
+  const vx=tgx-e.x, vy=tgy-e.y, d=Math.hypot(vx,vy)||1;
+  return [vx/d, vy/d, [nx,ny]];
+}
+
+/* ---------- канвас / фон ---------- */
+let groundCv=null;
+function resize(){
+  dpr = Math.min(window.devicePixelRatio||1, 2);
+  cv.width = innerWidth*dpr; cv.height = innerHeight*dpr;
+  cv.style.width = innerWidth+'px'; cv.style.height = innerHeight+'px';
+  if(!groundCv) buildGround();
+}
+addEventListener('resize', resize);
+
+function buildGround(){
+  groundCv = document.createElement('canvas');
+  const gw = 2400, gh = 1200; 
+  groundCv.width = gw * dpr; 
+  groundCv.height = gh * dpr;
+  const g = groundCv.getContext('2d');
+  g.setTransform(dpr,0,0,dpr,0,0);
+  
+  const gox = 1200; 
+  const goy = 60;   
+  
+  let rng = 9973;
+  const rnd = ()=> (rng = (rng*16807)%2147483647)/2147483647;
+  for(let y=0;y<GH;y++)for(let x=0;x<GW;x++){
+    const sx = gox + (x-y)*TW/2;
+    const sy = goy + (x+y)*TH/2;
+    const t = rnd();
+    const base = (x+y)%2 ? [116,128,62] : [107,119,56];
+    g.fillStyle = `rgb(${base[0]+t*14|0},${base[1]+t*14|0},${base[2]+t*10|0})`;
+    g.beginPath();
+    g.moveTo(sx, sy); g.lineTo(sx+TW/2, sy+TH/2);
+    g.lineTo(sx, sy+TH); g.lineTo(sx-TW/2, sy+TH/2);
+    g.closePath(); g.fill();
+    g.strokeStyle = 'rgba(40,50,20,.25)'; g.lineWidth = 1; g.stroke();
+    for(let i=0;i<3;i++){
+      const gx = sx+(rnd()-.5)*TW*.6, gy = sy+TH*.35+rnd()*TH*.45;
+      g.strokeStyle = `rgba(${170+rnd()*40|0},${160+rnd()*30|0},90,.5)`;
+      g.beginPath(); g.moveTo(gx,gy);
+      g.quadraticCurveTo(gx+2,gy-5,gx+(rnd()-.5)*6,gy-8-rnd()*4); g.stroke();
+    }
+  }
+}
+
+/* ---------- ефекти ---------- */
+function puff(x,y,n,color,spd=2.2,up=3){
+  for(let i=0;i<n;i++){
+    const a=Math.random()*Math.PI*2, s=Math.random()*spd;
+    G.particles.push({x,y,z:8+Math.random()*10,
+      vx:Math.cos(a)*s, vy:Math.sin(a)*s*.5, vz:Math.random()*up,
+      life:.5+Math.random()*.4, max:.9, color, size:2+Math.random()*3});
+  }
+}
+function floater(x,y,text,color){ G.floaters.push({x,y,z:34,text,color,life:1}); }
+
+/* ---------- вороги ---------- */
+const ETYPES = {
+  foot:   {hp:42,  spd:1.15, dmg:9,  reward:2,  r:.34},
+  rider:  {hp:70,  spd:1.9,  dmg:12, reward:5,  r:.40},
+  archer: {hp:34,  spd:1.05, dmg:8,  reward:3,  r:.32, range:4.2, kite:2.6},
+  murza:  {hp:210, spd:.85,  dmg:22, reward:15, r:.46}
+};
+function spawnEnemy(type){
+  const side=Math.floor(Math.random()*4);
+  let x,y;
+  if(side===0){x=Math.random()*GW; y=-0.5;}
+  else if(side===1){x=Math.random()*GW; y=GH+0.5;}
+  else if(side===2){x=-0.5; y=Math.random()*GH;}
+  else {x=GW+0.5; y=Math.random()*GH;}
+  const t=ETYPES[type];
+  G.enemies.push({type,x,y,hp:t.hp,max:t.hp,spd:t.spd*(0.9+Math.random()*.2),
+    dmg:t.dmg,r:t.r,cd:0,flash:0,step:Math.random()*7,fx:0,fy:1,
+    range:t.range||0, kite:t.kite||0, draw:0});
+}
+function makeWave(n){
+  const q=[];
+  const count=4+Math.floor(n*2.4);
+  for(let i=0;i<count;i++){
+    let t='foot';
+    const r=Math.random();
+    if(n>=2 && r<.22) t='archer';
+    else if(n>=3 && r<.45) t='rider';
+    else if(n>=5 && r<.55) t='murza';
+    q.push(t);
+  }
+  if(n%4===0) q.push('murza');
+  return q;
+}
+
+/* ---------- шкода ---------- */
+function hurtEnemy(e,dmg,kx,ky){
+  e.hp-=dmg; e.flash=.12;
+  puff(e.x,e.y,5,'#8f2320');
+  if(kx||ky){
+    const nx=e.x+kx, ny=e.y+ky;
+    if(!blocked(Math.floor(nx),Math.floor(ny))){e.x=nx;e.y=ny;}
+  }
+  if(e.hp<=0){
+    e.deadFlag=true; G.kills++;
+    const rew=ETYPES[e.type].reward;
+    G.res.gold += rew; // З ворогів падають дукати (золото)
+    floater(e.x,e.y,'+'+rew+' 🪙','#d9a441');
+    puff(e.x,e.y,12,'#6d1c18',3);
+  }
+}
+function hurtPlayer(dmg){
+  const p=G.player;
+  if(p.dead>0||p.inv>0) return;
+  p.hp-=dmg; p.lastHit=0; G.shake=Math.max(G.shake,4);
+  puff(p.x,p.y,6,'#8f2320');
+  if(p.hp<=0){
+    p.hp=0; p.dead=3;
+    floater(p.x,p.y,'Порубали!','#e8d9b0');
+    puff(p.x,p.y,18,'#8f2320',3.4);
+  }
+}
+function hurtSich(dmg){
+  G.sichHp-=dmg; G.sichFlash=.15; G.shake=Math.max(G.shake,3);
+  if(G.sichHp<=0){ G.sichHp=0; gameOver(); }
+}
+function hurtStructure(tx,ty,dmg){
+  const k=key(tx,ty);
+  const s=G.structures.get(k);
+  if(!s) return;
+  s.hp-=dmg; s.flash=.12;
+  puff(tx+.5,ty+.5,4,'#b08b55');
+  if(s.hp<=0){
+    G.structures.delete(k);
+    puff(tx+.5,ty+.5,14,'#8a6b3a',3);
+    recomputeFlow();
+  }
+}
+
+function explode(x, y, radius, damage) {
+  puff(x, y, 15, '#444', 2.5, 4);
+  puff(x, y, 10, '#d9a441', 3.5, 6);
+  G.shake = Math.max(G.shake, 6);
+  
+  for (const e of G.enemies) {
+    const d = Math.hypot(e.x - x, e.y - y);
+    if (d < radius) {
+      const dx = e.x - x, dy = e.y - y;
+      const dist = Math.hypot(dx, dy) || 1;
+      const force = 0.25; 
+      hurtEnemy(e, damage, (dx/dist) * force, (dy/dist) * force);
+    }
+  }
+}
+
+/* ---------- селяни ---------- */
+function spawnPeasant() {
+  G.peasants.push({
+    x: SICH.cx, y: SICH.cy + 1,
+    spd: 1.8, state: 'idle', target: null,
+    carryType: null, timer: 0, step: 0, fx: 0, fy: 1
+  });
+  puff(SICH.cx, SICH.cy + 1, 8, '#e8d9b0');
+}
+
+function assignPeasant(tx, ty) {
+  const k = key(tx, ty);
+  const res = G.mapRes.get(k);
+  if (!res) return false;
+  
+  // Шукаємо вільного селянина
+  let best = null, minDist = Infinity;
+  for (const p of G.peasants) {
+    if (p.state === 'idle') {
+      const d = Math.hypot(p.x - (tx+0.5), p.y - (ty+0.5));
+      if (d < minDist) { minDist = d; best = p; }
+    }
+  }
+  
+  if (best) {
+    best.target = { x: tx+0.5, y: ty+0.5, type: res.type, k: k };
+    best.state = 'moving_to_res';
+    floater(best.x, best.y, 'До праці!', '#e8d9b0');
+    puff(tx+0.5, ty+0.5, 5, '#e8d9b0', 1, 2); // Підсвітка цілі
+    return true;
+  } else {
+    floater(tx+0.5, ty+0.5, 'Немає вільних селян!', '#e08a7a');
+    return true; // Клік оброблено, не атакуємо
+  }
+}
+
+function movePeasant(p, dx, dy, dt) {
+  const l = Math.hypot(dx, dy);
+  if(l < 0.001) return;
+  p.fx = dx/l; p.fy = dy/l;
+  const step = p.spd * dt;
+  const nx = p.x + p.fx * step, ny = p.y + p.fy * step;
+  if (!blocked(Math.floor(nx), Math.floor(p.y))) p.x = nx;
+  if (!blocked(Math.floor(p.x), Math.floor(ny))) p.y = ny;
+}
+
+/* ---------- оновлення ---------- */
+function update(dt){
+  G.time+=dt;
+  const p=G.player;
+
+  if(G.phase==='build'){
+    G.phaseT-=dt;
+    if(G.phaseT<=0) startWave();
+  } else {
+    if(G.spawnQueue.length){
+      G.spawnT-=dt;
+      if(G.spawnT<=0){ spawnEnemy(G.spawnQueue.shift()); G.spawnT=.75; }
+    } else if(G.enemies.length===0){
+      const bonus=15+G.wave*5;
+      G.res.gold += bonus;
+      showBanner('Набіг відбито! +'+bonus+' 🪙');
+      G.wave++; G.phase='build'; G.phaseT=16;
+    }
+  }
+
+  /* --- козак --- */
+  if(p.dead>0){
+    p.dead-=dt;
+    if(p.dead<=0){ p.hp=p.max; p.x=15.5; p.y=18.2; p.inv=1.6;
+      floater(p.x,p.y,'Козак повернувся!','#bfe08a'); }
+  } else {
+    if(p.inv>0) p.inv-=dt;
+    p.lastHit+=dt;
+    if(p.lastHit>4&&p.hp<p.max) p.hp=Math.min(p.max,p.hp+3*dt);
+    let mx=p.mvx, my=p.mvy;
+    const kb=keysVec();
+    if(kb[0]||kb[1]){ mx=kb[0]; my=kb[1]; }
+    const len=Math.hypot(mx,my);
+    if(len>0.01){
+      mx/=len; my/=len;
+      p.fx=mx; p.fy=my; p.step+=dt*10;
+      const spd=3.3*dt;
+      let nx=p.x+mx*spd, ny=p.y+my*spd;
+      nx=Math.max(.25,Math.min(GW-.25,nx));
+      ny=Math.max(.25,Math.min(GH-.25,ny));
+      if(!blocked(Math.floor(nx),Math.floor(p.y))) p.x=nx;
+      if(!blocked(Math.floor(p.x),Math.floor(ny))) p.y=ny;
+    }
+    if(p.atkCd>0) p.atkCd-=dt;
+    if(p.swing>0) p.swing-=dt;
+  }
+
+  /* --- камера слідує за гравцем --- */
+  const targetCamX = (p.x - p.y) * TW / 2;
+  const targetCamY = (p.x + p.y) * TH / 2;
+  G.camX += (targetCamX - G.camX) * 5 * dt;
+  G.camY += (targetCamY - G.camY) * 5 * dt;
+  ox = innerWidth / 2 - G.camX;
+  oy = innerHeight / 2 - G.camY;
+
+  /* --- селяни (ШІ) --- */
+  for (const peas of G.peasants) {
+    if (peas.state === 'idle') {
+      peas.step = 0; // Стоїть і чекає наказу гравця
+    } else if (peas.state === 'moving_to_res') {
+      const dx = peas.target.x - peas.x, dy = peas.target.y - peas.y;
+      const dist = Math.hypot(dx, dy);
+      if (dist < 1.4) {
+        peas.state = 'gathering';
+        peas.timer = 2.0;
+      } else {
+        movePeasant(peas, dx, dy, dt);
+        peas.step += dt * 8;
+      }
+    } else if (peas.state === 'gathering') {
+      peas.timer -= dt;
+      if (Math.random() < 0.1) {
+        const colors = {wood: '#6b4a2a', gold: '#d9a441', grain: '#e8c86a'};
+        puff(peas.x, peas.y, 2, colors[peas.target.type], 1, 2);
+      }
+      if (peas.timer <= 0) {
+        peas.carryType = peas.target.type;
+        peas.state = 'moving_to_sich';
+      }
+    } else if (peas.state === 'moving_to_sich') {
+      const dx = SICH.cx - peas.x, dy = SICH.cy - peas.y;
+      const dist = Math.hypot(dx, dy);
+      if (dist < 1.5) {
+        G.res[peas.carryType] += 5;
+        const icon = peas.carryType === 'wood' ? '🪵' : (peas.carryType === 'gold' ? '🪙' : '🌾');
+        const color = peas.carryType === 'wood' ? '#8a5a2e' : (peas.carryType === 'gold' ? '#d9a441' : '#e8c86a');
+        floater(peas.x, peas.y, '+5 ' + icon, color);
+        peas.carryType = null;
+        // Автоматично повертається до того ж ресурсу!
+        peas.state = 'moving_to_res';
+      } else {
+        movePeasant(peas, dx, dy, dt);
+        peas.step += dt * 8;
+      }
+    }
+  }
+
+  /* --- орда --- */
+  for(const e of G.enemies){
+    if(e.cd>0) e.cd-=dt;
+    if(e.flash>0) e.flash-=dt;
+    if(e.draw>0) e.draw-=dt;
+    e.step+=dt*8*e.spd;
+
+    const distP = p.dead<=0 ? Math.hypot(p.x-e.x,p.y-e.y) : 99;
+    const distS = Math.hypot(SICH.cx-e.x, SICH.cy-e.y);
+
+    if(e.type==='archer'){
+      const target = distP < e.range ? 'p' : (distS < e.range ? 's' : null);
+      if(target && e.cd<=0){
+        e.cd = 1.8; e.draw = .35;
+        const tx = target==='p' ? p.x : SICH.cx;
+        const ty = target==='p' ? p.y : SICH.cy;
+        const dx=tx-e.x, dy=ty-e.y, d=Math.hypot(dx,dy)||1;
+        G.arrows.push({x:e.x,y:e.y,z:22,vx:dx/d*6.5,vy:dy/d*6.5,dmg:e.dmg,life:1.4,tgt:target});
+      }
+      let dx,dy;
+      if(distP < e.kite){
+        dx=(e.x-p.x); dy=(e.y-p.y);
+        const d=Math.hypot(dx,dy)||1; dx/=d; dy/=d;
+      } else if(target){
+        dx=0; dy=0;
+      } else {
+        const f=flowDir(e); dx=f[0]; dy=f[1];
+        const nb=f[2];
+        if(nb && G.structures.has(key(nb[0],nb[1]))){
+          if(e.cd<=0){ e.cd=1.0; hurtStructure(nb[0],nb[1],e.dmg); }
+          dx=0; dy=0;
+        }
+      }
+      moveEnemy(e,dx,dy,dt);
+      continue;
+    }
+
+    if(distP<0.95){
+      if(e.cd<=0){ e.cd=1; hurtPlayer(e.dmg); }
+      e.fx=p.x-e.x; e.fy=p.y-e.y;
+      continue;
+    }
+    if(distS<1.25){
+      if(e.cd<=0){ e.cd=1.1; hurtSich(e.dmg); puff(SICH.cx,SICH.cy,5,'#c8a468'); }
+      continue;
+    }
+    if(distP<2.2 && e.type!=='murza'){
+      const dx=p.x-e.x, dy=p.y-e.y, d=Math.hypot(dx,dy)||1;
+      moveEnemy(e,dx/d,dy/d,dt);
+      continue;
+    }
+    const f=flowDir(e);
+    let dx=f[0], dy=f[1];
+    const nb=f[2];
+    if(nb && G.structures.has(key(nb[0],nb[1]))){
+      if(e.cd<=0){ e.cd=.9; hurtStructure(nb[0],nb[1],e.dmg); }
+      dx=0; dy=0;
+    }
+    moveEnemy(e,dx,dy,dt);
+  }
+  G.enemies=G.enemies.filter(e=>!e.deadFlag);
+
+  /* --- гармати --- */
+  for(const [k,s] of G.structures){
+    if(s.flash>0) s.flash-=dt;
+    if(s.type!=='can') continue;
+    if(s.cd>0){ s.cd-=dt; continue; }
+    const [txs,tys]=k.split(',').map(Number);
+    const cx=txs+.5, cy=tys+.5;
+    let best=null, bd=3.6;
+    for(const e of G.enemies){
+      const d=Math.hypot(e.x-cx,e.y-cy);
+      if(d<bd){bd=d;best=e;}
+    }
+    if(best){
+      s.cd=1.25; s.fire=.12;
+      const d=bd||1;
+      G.projectiles.push({x:cx,y:cy,z:26,
+        vx:(best.x-cx)/d*7.5, vy:(best.y-cy)/d*7.5, dmg:26, life:1.2});
+      puff(cx,cy,4,'#d9d0b8',1.5,2);
+      G.shake=Math.max(G.shake,1.5);
+    }
+  }
+
+  /* --- ядра --- */
+  for (const pr of G.projectiles) {
+    pr.x += pr.vx * dt; 
+    pr.y += pr.vy * dt; 
+    pr.life -= dt;
+
+    let hit = false;
+    for (const e of G.enemies) {
+      if (Math.hypot(e.x - pr.x, e.y - pr.y) < e.r + 0.15) {
+        hit = true;
+        break;
+      }
+    }
+
+    if (hit || pr.life <= 0) {
+      explode(pr.x, pr.y, 1.8, pr.dmg);
+      pr.life = 0;
+    }
+  }
+  G.projectiles = G.projectiles.filter(pr => pr.life > 0);
+
+  /* --- стріли орди --- */
+  for(const a of G.arrows){
+    a.x+=a.vx*dt; a.y+=a.vy*dt; a.life-=dt;
+    if(p.dead<=0 && Math.hypot(p.x-a.x,p.y-a.y)<0.4){
+      hurtPlayer(a.dmg); a.life=0; continue;
+    }
+    if(Math.hypot(SICH.cx-a.x,SICH.cy-a.y)<0.7){
+      hurtSich(a.dmg); a.life=0; continue;
+    }
+    const tx=Math.floor(a.x), ty=Math.floor(a.y);
+    if(inGrid(tx,ty) && G.structures.has(key(tx,ty))){
+      hurtStructure(tx,ty,a.dmg); a.life=0;
+    }
+  }
+  G.arrows=G.arrows.filter(a=>a.life>0);
+
+  for(const pt of G.particles){
+    pt.x+=pt.vx*dt; pt.y+=pt.vy*dt; pt.z+=pt.vz; pt.vz-=0.3;
+    if(pt.z<0){pt.z=0;pt.vz=0;}
+    pt.life-=dt;
+  }
+  G.particles=G.particles.filter(pt=>pt.life>0);
+  for(const f of G.floaters){ f.z+=26*dt; f.life-=dt; }
+  G.floaters=G.floaters.filter(f=>f.life>0);
+
+  if(G.shake>0) G.shake=Math.max(0,G.shake-14*dt);
+  if(G.sichFlash>0) G.sichFlash-=dt;
+  updateHUD();
+}
+
+/* рух ворога з розштовхуванням і ковзанням уздовж стін */
+function moveEnemy(e,dx,dy,dt){
+  if(dx||dy){ e.fx=dx; e.fy=dy; }
+  for(const o of G.enemies){
+    if(o===e) continue;
+    const ddx=e.x-o.x, ddy=e.y-o.y, dd=Math.hypot(ddx,ddy);
+    if(dd>0.001&&dd<0.55){ dx+=ddx/dd*.45; dy+=ddy/dd*.45; }
+  }
+  const l=Math.hypot(dx,dy);
+  if(l<0.001) return;
+  dx/=l; dy/=l;
+  const step=e.spd*dt;
+  const nx=e.x+dx*step, ny=e.y+dy*step;
+  if(!blocked(Math.floor(nx),Math.floor(e.y))) e.x=nx;
+  if(!blocked(Math.floor(e.x),Math.floor(ny))) e.y=ny;
+  e.x=Math.max(-1,Math.min(GW+1,e.x));
+  e.y=Math.max(-1,Math.min(GH+1,e.y));
+}
+
+function attack(){
+  if(!G.running) return;
+  const p=G.player;
+  if(p.dead>0||p.atkCd>0) return;
+  p.atkCd=.34; p.swing=.22;
+  let hit=false;
+  for(const e of G.enemies){
+    const dx=e.x-p.x, dy=e.y-p.y, d=Math.hypot(dx,dy);
+    if(d<1.25){
+      const dot=(dx*p.fx+dy*p.fy)/(d||1);
+      if(dot>0.15||d<0.5){ hurtEnemy(e,30,dx/d*.35,dy/d*.35); hit=true; }
+    }
+  }
+  if(hit) G.shake=Math.max(G.shake,2);
+}
+
+function startWave(){
+  G.phase='wave';
+  G.spawnQueue=makeWave(G.wave);
+  G.spawnT=.4;
+  showBanner('Хвиля '+G.wave+' — орда суне!');
+}
+
+/* ---------- керування ---------- */
+const keys={};
+addEventListener('keydown',e=>{
+  if(e.repeat) return;
+  keys[e.code]=true;
+  if(e.code==='Space'||e.code==='KeyJ'){ e.preventDefault(); attack(); }
+  if(e.code==='Digit1') selectTool('pal');
+  if(e.code==='Digit2') selectTool('can');
+  if(e.code==='KeyF') showFlow=!showFlow;
+  if(e.code==='Escape') selectTool(null);
+});
+addEventListener('keyup',e=>keys[e.code]=false);
+function keysVec(){
+  let x=0,y=0;
+  const up=keys.KeyW||keys.ArrowUp, dn=keys.KeyS||keys.ArrowDown,
+        lf=keys.KeyA||keys.ArrowLeft, rt=keys.KeyD||keys.ArrowRight;
+  if(up){x-=1;y-=1;} if(dn){x+=1;y+=1;}
+  if(lf){x-=1;y+=1;} if(rt){x+=1;y-=1;}
+  return [x,y];
+}
+
+/* тач */
+const stick=$('stick'), knob=$('knob');
+let stTouch=null, stCx=0, stCy=0;
+if('ontouchstart' in window) document.body.classList.add('touch');
+addEventListener('touchstart',e=>{
+  for(const t of e.changedTouches){
+    if(t.clientX<innerWidth*.5&&t.clientY>innerHeight*.35&&stTouch===null){
+      stTouch=t.identifier;
+      const r=stick.getBoundingClientRect();
+      stCx=r.left+r.width/2; stCy=r.top+r.height/2;
+    }
+  }
+},{passive:true});
+addEventListener('touchmove',e=>{
+  for(const t of e.changedTouches){
+    if(t.identifier===stTouch){
+      let dx=t.clientX-stCx, dy=t.clientY-stCy;
+      const d=Math.hypot(dx,dy), m=44;
+      if(d>m){dx=dx/d*m;dy=dy/d*m;}
+      knob.style.transform=`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px))`;
+      G.player.mvx=(dx/m+dy/m); G.player.mvy=(dy/m-dx/m);
+    }
+  }
+},{passive:true});
+addEventListener('touchend',e=>{
+  for(const t of e.changedTouches){
+    if(t.identifier===stTouch){
+      stTouch=null; G.player.mvx=0; G.player.mvy=0;
+      knob.style.transform='translate(-50%,-50%)';
+    }
+  }
+});
+$('atkBtn').addEventListener('touchstart',e=>{e.preventDefault();attack();});
+$('atkBtn').addEventListener('click',()=>attack());
+
+function unfocus(el){ el.addEventListener('click',()=>el.blur()); }
+document.querySelectorAll('button').forEach(unfocus);
+
+function selectTool(t){
+  if(!G) return;
+  G.tool = (G.tool===t)?null:t;
+  $('toolPal').classList.toggle('sel',G.tool==='pal');
+  $('toolCan').classList.toggle('sel',G.tool==='can');
+}
+$('toolPal').onclick=()=>selectTool('pal');
+$('toolCan').onclick=()=>selectTool('can');
+$('waveBtn').onclick=()=>{ if(G.phase==='build') startWave(); };
+
+$('toolPeas').onclick=()=>{
+  if(!G.running) return;
+  if(G.res.grain >= COST.peas){
+    G.res.grain -= COST.peas;
+    spawnPeasant();
+  } else {
+    showBanner('Мало зерна!');
+  }
+};
+
+let hoverTile=null;
+cv.addEventListener('mousemove',e=>{ hoverTile=tileFromScreen(e.clientX,e.clientY); });
+cv.addEventListener('mouseleave',()=>hoverTile=null);
+
+// КЛІК МИШКОЮ (Або відправка селянина, або будова, або удар)
+cv.addEventListener('click',e=>{
+  if(G.tool) {
+    tryBuild(e.clientX,e.clientY);
+  } else {
+    const [tx, ty] = tileFromScreen(e.clientX, e.clientY);
+    if (inGrid(tx, ty) && G.mapRes.has(key(tx, ty))) {
+      // Якщо клікнули на ресурс — відправити селянина
+      assignPeasant(tx, ty);
+    } else {
+      // Інакше — вдарити шаблею
+      attack();
+    }
+  }
+});
+
+cv.addEventListener('contextmenu',e=>{
+  e.preventDefault();
+  const [txs,tys]=tileFromScreen(e.clientX,e.clientY);
+  const k=key(txs,tys);
+  if(G.structures.has(k)){
+    const s=G.structures.get(k);
+    if (s.type === 'pal') {
+      const refund = Math.floor(COST.pal / 2);
+      G.res.wood += refund;
+      floater(txs+.5, tys+.5, '+'+refund+' 🪵', '#8a5a2e');
+    } else {
+      const refund = Math.floor(COST.can / 2);
+      G.res.gold += refund;
+      floater(txs+.5, tys+.5, '+'+refund+' 🪙', '#d9a441');
+    }
+    G.structures.delete(k);
+    puff(txs+.5, tys+.5, 8, '#8a6b3a');
+    recomputeFlow();
+  }
+});
+
+// ТАЧ ЕКРАН (Або відправка селянина, або будова)
+cv.addEventListener('touchstart',e=>{
+  if(!G) return;
+  const t=e.changedTouches[0];
+  if(t.clientX<innerWidth*.5&&t.clientY>innerHeight*.35) return;
+  
+  if(G.tool) {
+    tryBuild(t.clientX,t.clientY);
+  } else {
+    const [tx, ty] = tileFromScreen(t.clientX, t.clientY);
+    if (inGrid(tx, ty) && G.mapRes.has(key(tx, ty))) {
+      assignPeasant(tx, ty);
+    }
+  }
+},{passive:true});
+
+function tryBuild(sx,sy){
+  if(!G.running||!G.tool) return;
+  const [txs,tys]=tileFromScreen(sx,sy);
+  if(!inGrid(txs,tys)) return;
+  if(isSich(txs,tys)) return;
+  const k=key(txs,tys);
+  if(G.structures.has(k) || G.mapRes.has(k)) return;
+  if(Math.floor(G.player.x)===txs&&Math.floor(G.player.y)===tys) return;
+  
+  if (G.tool === 'pal') {
+    if(G.res.wood < COST.pal){ floater(txs+.5,tys+.5,'Мало дерева!','#e08a7a'); return; }
+    G.res.wood -= COST.pal;
+  } else if (G.tool === 'can') {
+    if(G.res.gold < COST.can){ floater(txs+.5,tys+.5,'Мало золота!','#e08a7a'); return; }
+    G.res.gold -= COST.can;
+  }
+
+  G.structures.set(k, G.tool==='pal'
+    ? {type:'pal',hp:130,max:130,cd:0,flash:0}
+    : {type:'can',hp:85,max:85,cd:.5,flash:0,fire:0});
+  puff(txs+.5,tys+.5,8,'#c8a468',2,4);
+  recomputeFlow();
+}
+
+/* ---------- HUD ---------- */
+function updateHUD(){
+  $('waveN').textContent=G.wave;
+  $('phaseT').textContent = G.phase==='build'
+      ? 'будова' : (G.spawnQueue.length+G.enemies.length)+' ворогів';
+  
+  $('woodN').textContent=G.res.wood;
+  $('goldN').textContent=G.res.gold;
+  $('grainN').textContent=G.res.grain;
+  
+  $('sichFill').style.width=(G.sichHp/G.sichMax*100)+'%';
+  $('hpFill').style.width=(G.player.hp/G.player.max*100)+'%';
+  $('waveBtn').disabled = G.phase!=='build';
+  $('waveTimer').textContent = G.phase==='build' ? Math.ceil(G.phaseT)+' с' : '—';
+  
+  $('toolPal').disabled = G.res.wood < COST.pal && G.tool!=='pal';
+  $('toolCan').disabled = G.res.gold < COST.can && G.tool!=='can';
+  $('toolPeas').disabled = G.res.grain < COST.peas;
+}
+let bannerT=null;
+function showBanner(t){
+  const b=$('banner');
+  b.textContent=t; b.style.opacity=1;
+  clearTimeout(bannerT);
+  bannerT=setTimeout(()=>b.style.opacity=0,2200);
+}
+
+/* ============================================================ МАЛЮВАННЯ */
+function shadow(x,y,r){
+  ctx.fillStyle='rgba(15,20,8,.35)';
+  ctx.beginPath();
+  ctx.ellipse(isoX(x,y),isoY(x,y)+2,r,r*.45,0,0,7);
+  ctx.fill();
+}
+function drawSich(){
+  const sx=isoX(SICH.cx,SICH.cy), sy=isoY(SICH.cx,SICH.cy);
+  const fl=G.sichFlash>0;
+  shadow(SICH.cx,SICH.cy+0.1,34);
+  ctx.fillStyle=fl?'#d88f6a':'#6b4a2a';
+  ctx.fillRect(sx-26,sy-46,52,44);
+  ctx.strokeStyle='#4a3018'; ctx.lineWidth=2;
+  for(let i=1;i<5;i++){ ctx.beginPath();ctx.moveTo(sx-26,sy-46+i*9);ctx.lineTo(sx+26,sy-46+i*9);ctx.stroke(); }
+  ctx.fillStyle='#3a2814'; ctx.fillRect(sx-7,sy-22,14,20);
+  ctx.fillStyle='#e8c86a'; ctx.fillRect(sx+12,sy-36,8,8); ctx.fillRect(sx-20,sy-36,8,8);
+  ctx.fillStyle=fl?'#e0a880':'#8a5a2e';
+  ctx.beginPath(); ctx.moveTo(sx-32,sy-44); ctx.lineTo(sx,sy-66); ctx.lineTo(sx+32,sy-44);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle='#d9a441';
+  ctx.beginPath(); ctx.arc(sx,sy-72,10,Math.PI,0); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(sx-10,sy-72); ctx.quadraticCurveTo(sx,sy-92,sx+10,sy-72); ctx.fill();
+  ctx.strokeStyle='#e8c86a'; ctx.lineWidth=2.5;
+  ctx.beginPath();
+  ctx.moveTo(sx,sy-104); ctx.lineTo(sx,sy-88);
+  ctx.moveTo(sx-6,sy-99); ctx.lineTo(sx+6,sy-99);
+  ctx.stroke();
+  ctx.strokeStyle='#c8a468'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(sx+26,sy-44); ctx.lineTo(sx+26,sy-70); ctx.stroke();
+  const wob=Math.sin(G.time*3)*3;
+  ctx.fillStyle='#2e5fa3'; ctx.fillRect(sx+26,sy-70,16+wob*.3,5);
+  ctx.fillStyle='#e8c86a'; ctx.fillRect(sx+26,sy-65,16+wob*.3,5);
+}
+function drawPalisade(tx,ty,s){
+  const cx=tx+.5, cy=ty+.5;
+  shadow(cx,cy,20);
+  const px=isoX(cx,cy), py=isoY(cx,cy);
+  const fl=s.flash>0;
+  for(let i=-2;i<=2;i++){
+    const x=px+i*8, h=24+(i%2?4:0);
+    ctx.fillStyle=fl?'#d8b080':(i%2?'#7a5836':'#6b4a2a');
+    ctx.fillRect(x-3,py-h,6,h+3);
+    ctx.fillStyle=fl?'#e8c8a0':'#93714a';
+    ctx.beginPath(); ctx.moveTo(x-3,py-h); ctx.lineTo(x,py-h-6); ctx.lineTo(x+3,py-h); ctx.fill();
+  }
+  ctx.strokeStyle='#4a3018'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(px-20,py-12); ctx.lineTo(px+20,py-12); ctx.stroke();
+  hpBar(px,py-36,s.hp/s.max,32);
+}
+function drawCannon(tx,ty,s){
+  const cx=tx+.5, cy=ty+.5;
+  shadow(cx,cy,20);
+  const px=isoX(cx,cy), py=isoY(cx,cy);
+  const fl=s.flash>0;
+  ctx.fillStyle=fl?'#d8b080':'#5c412a';
+  ctx.beginPath();
+  ctx.moveTo(px,py-2); ctx.lineTo(px+22,py-13); ctx.lineTo(px,py-24); ctx.lineTo(px-22,py-13);
+  ctx.closePath(); ctx.fill();
+  ctx.strokeStyle='#3a2814'; ctx.stroke();
+  ctx.fillStyle='#4a3018';
+  ctx.fillRect(px-18,py-13,5,13); ctx.fillRect(px+13,py-13,5,13);
+  ctx.save();
+  ctx.translate(px,py-24);
+  ctx.fillStyle='#2e2a26';
+  ctx.beginPath(); ctx.roundRect(-6,-14,12,20,4); ctx.fill();
+  ctx.fillStyle='#524a42';
+  ctx.beginPath(); ctx.ellipse(0,-14,6,3,0,0,7); ctx.fill();
+  if(s.fire>0){
+    s.fire-=0.016;
+    ctx.fillStyle='rgba(240,200,90,.9)';
+    ctx.beginPath(); ctx.arc(0,-18,7,0,7); ctx.fill();
+  }
+  ctx.restore();
+  hpBar(px,py-46,s.hp/s.max,32);
+}
+function drawMapResource(tx, ty, res) {
+  const cx = tx + 0.5, cy = ty + 0.5;
+  const px = isoX(cx, cy), py = isoY(cx, cy);
+  if (res.type === 'wood') {
+    shadow(cx, cy, 12);
+    ctx.fillStyle = '#4a3018';
+    ctx.fillRect(px - 3, py - 10, 6, 12);
+    ctx.fillStyle = '#2d4c1e';
+    ctx.beginPath(); ctx.arc(px, py - 18, 12, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.arc(px - 8, py - 12, 10, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.arc(px + 8, py - 12, 10, 0, 7); ctx.fill();
+  } else if (res.type === 'gold') {
+    shadow(cx, cy, 18);
+    ctx.fillStyle = '#666'; // Велика скеля
+    ctx.beginPath(); ctx.ellipse(px, py - 6, 16, 10, 0, 0, 7); ctx.fill();
+    ctx.fillStyle = '#444';
+    ctx.beginPath(); ctx.ellipse(px - 6, py - 10, 10, 8, 0, 0, 7); ctx.fill();
+    ctx.fillStyle = '#d9a441'; // Золоті жили
+    ctx.fillRect(px - 4, py - 14, 4, 4);
+    ctx.fillRect(px + 6, py - 8, 5, 5);
+    ctx.fillRect(px - 10, py - 6, 4, 3);
+    ctx.fillRect(px, py - 2, 3, 3);
+  } else if (res.type === 'grain') {
+    ctx.fillStyle = '#d9a441';
+    for(let i=0; i<5; i++) {
+      const ox = (i%3)*6 - 6;
+      const oy = Math.floor(i/3)*4 - 2;
+      ctx.fillRect(px + ox, py + oy - 8, 2, 10);
+      ctx.fillStyle = '#e8c86a';
+      ctx.fillRect(px + ox - 1, py + oy - 10, 4, 4);
+      ctx.fillStyle = '#d9a441';
+    }
+  }
+}
+function hpBar(px,py,ratio,w){
+  if(ratio>=1) return;
+  ctx.fillStyle='rgba(20,14,8,.8)';
+  ctx.fillRect(px-w/2,py,w,4);
+  ctx.fillStyle=ratio>.5?'#7fae4a':(ratio>.25?'#d9a441':'#c8452f');
+  ctx.fillRect(px-w/2,py,w*Math.max(0,ratio),4);
+}
+function drawCossack(){
+  const p=G.player;
+  if(p.dead>0){
+    const px=isoX(p.x,p.y), py=isoY(p.x,p.y);
+    ctx.fillStyle='rgba(232,217,176,.8)';
+    ctx.beginPath(); ctx.ellipse(px,py-4,14,5,0,0,7); ctx.fill();
+    ctx.fillStyle='#a5252b';
+    ctx.beginPath(); ctx.ellipse(px+8,py-4,7,4,0,0,7); ctx.fill();
+    return;
+  }
+  if(p.inv>0 && Math.floor(G.time*12)%2) return;
+  shadow(p.x,p.y,11);
+  const px=isoX(p.x,p.y), py=isoY(p.x,p.y);
+  const kv=keysVec();
+  const walking=Math.hypot(p.mvx,p.mvy)>0.05||kv[0]||kv[1];
+  const bob=walking?Math.sin(p.step)*1.6:0;
+  const legSw=walking?Math.sin(p.step)*4:0;
+  const flip=(p.fx-p.fy)<0?-1:1;
+  ctx.save();
+  ctx.translate(px,py);
+  ctx.scale(flip,1);
+  ctx.fillStyle='#a5252b';
+  ctx.beginPath(); ctx.roundRect(-7+legSw*.3,-14,6.5,14,3); ctx.fill();
+  ctx.beginPath(); ctx.roundRect(0.5-legSw*.3,-14,6.5,14,3); ctx.fill();
+  ctx.fillStyle='#2e2a26';
+  ctx.fillRect(-8+legSw*.3,-3,8,3.5); ctx.fillRect(0-legSw*.3,-3,8,3.5);
+  ctx.fillStyle='#ece2c8';
+  ctx.beginPath(); ctx.roundRect(-8,-30+bob,16,17,4); ctx.fill();
+  ctx.fillStyle='#2e5fa3';
+  ctx.fillRect(-8,-16+bob,16,4);
+  const sw = p.swing>0 ? (1-p.swing/.22) : 0;
+  ctx.save();
+  ctx.translate(7,-24+bob);
+  ctx.rotate(-1.9+sw*2.6);
+  ctx.strokeStyle='#ece2c8'; ctx.lineWidth=4;
+  ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(8,2); ctx.stroke();
+  ctx.strokeStyle='#cfd6dc'; ctx.lineWidth=2.5;
+  ctx.beginPath(); ctx.moveTo(8,2); ctx.quadraticCurveTo(20,0,24,-5); ctx.stroke();
+  ctx.strokeStyle='#8a6b3a'; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(7,2); ctx.lineTo(10,2.5); ctx.stroke();
+  ctx.restore();
+  if(p.swing>0.05){
+    ctx.strokeStyle='rgba(240,240,220,'+(p.swing*2.5)+')';
+    ctx.lineWidth=3;
+    ctx.beginPath(); ctx.arc(6,-22+bob,17,-2.1+sw*2.2,-1.2+sw*2.2); ctx.stroke();
+  }
+  ctx.fillStyle='#d8a878';
+  ctx.beginPath(); ctx.arc(0,-36+bob,7,0,7); ctx.fill();
+  ctx.strokeStyle='#1e1a16'; ctx.lineWidth=3; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(-1,-43+bob); ctx.quadraticCurveTo(-8,-44,-10,-38+bob); ctx.stroke();
+  ctx.strokeStyle='#2e2a26'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(2,-33+bob); ctx.quadraticCurveTo(7,-32,8,-35+bob); ctx.stroke();
+  ctx.restore();
+}
+function drawPeasant(p){
+  shadow(p.x, p.y, 8);
+  const px = isoX(p.x, p.y), py = isoY(p.x, p.y);
+  const flip = (p.fx - p.fy) < 0 ? -1 : 1;
+  const bob = (p.state === 'moving_to_res' || p.state === 'moving_to_sich') ? Math.sin(p.step)*1.5 : 0;
+  const legSw = (p.state === 'moving_to_res' || p.state === 'moving_to_sich') ? Math.sin(p.step)*4 : 0;
+  
+  ctx.save();
+  ctx.translate(px, py);
+  ctx.scale(flip, 1);
+  
+  ctx.fillStyle = '#5c412a';
+  ctx.beginPath(); ctx.roundRect(-5+legSw*.3, -10, 5, 10, 2); ctx.fill();
+  ctx.beginPath(); ctx.roundRect(1-legSw*.3, -10, 5, 10, 2); ctx.fill();
+  
+  ctx.fillStyle = '#e8d9b0';
+  ctx.beginPath(); ctx.roundRect(-6, -20+bob, 12, 12, 3); ctx.fill();
+  
+  ctx.fillStyle = '#d8a878';
+  ctx.beginPath(); ctx.arc(0, -25+bob, 5, 0, 7); ctx.fill();
+  
+  ctx.fillStyle = '#2a1d10';
+  ctx.beginPath(); ctx.arc(0, -27+bob, 5, Math.PI, 0); ctx.fill();
+  
+  if (p.carryType) {
+    ctx.fillStyle = p.carryType === 'wood' ? '#6b4a2a' : (p.carryType === 'gold' ? '#d9a441' : '#e8c86a');
+    ctx.fillRect(-8, -18+bob, 6, 6);
+  }
+  ctx.restore();
+}
+function drawEnemy(e){
+  shadow(e.x,e.y,e.type==='rider'?14:10);
+  const px=isoX(e.x,e.y), py=isoY(e.x,e.y);
+  const flip=(e.fx-e.fy)<0?-1:1;
+  const bob=Math.sin(e.step)*1.5;
+  const fl=e.flash>0;
+  ctx.save();
+  ctx.translate(px,py);
+  ctx.scale(flip,1);
+  if(e.type==='rider'){
+    ctx.fillStyle=fl?'#e0a880':'#5a4330';
+    ctx.beginPath(); ctx.ellipse(0,-12+bob*.5,15,8,0,0,7); ctx.fill();
+    ctx.fillStyle='#4a3626';
+    const g=Math.sin(e.step)*5;
+    ctx.fillRect(-12+g*.4,-8,3.5,9); ctx.fillRect(8-g*.4,-8,3.5,9);
+    ctx.fillRect(-6-g*.4,-8,3.5,9); ctx.fillRect(13+g*.4,-8,3.5,9);
+    ctx.beginPath(); ctx.moveTo(13,-16); ctx.quadraticCurveTo(20,-24,24,-22);
+    ctx.lineTo(24,-18); ctx.quadraticCurveTo(19,-18,14,-11); ctx.closePath();
+    ctx.fillStyle=fl?'#e0a880':'#5a4330'; ctx.fill();
+    ctx.translate(0,-14);
+  }
+  const big=e.type==='murza'?1.3:1;
+  ctx.scale(big,big);
+  const coat = e.type==='murza' ? '#7c2a52' : (e.type==='archer' ? '#3a5a48' : '#4a3a52');
+  ctx.fillStyle=fl?'#e88a70':coat;
+  ctx.beginPath(); ctx.roundRect(-8,-26+bob,16,20,4); ctx.fill();
+  ctx.fillStyle='rgba(0,0,0,.18)';
+  ctx.fillRect(-8,-12+bob,16,3);
+  ctx.fillStyle='#c89868';
+  ctx.beginPath(); ctx.arc(0,-31+bob,6,0,7); ctx.fill();
+  ctx.fillStyle=fl?'#f0c0a0':'#33261a';
+  ctx.beginPath(); ctx.arc(0,-34+bob,6.5,Math.PI,0); ctx.fill();
+  ctx.fillRect(-6.5,-34+bob,13,3);
+  if(e.type==='murza'){
+    ctx.fillStyle='#8f8a80';
+    ctx.beginPath(); ctx.moveTo(-6,-34+bob); ctx.lineTo(0,-46+bob); ctx.lineTo(6,-34+bob); ctx.fill();
+  }
+  if(e.type==='archer'){
+    const pull = e.draw>0 ? 4 : 0;
+    ctx.strokeStyle='#8a6b3a'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.arc(9,-18+bob,9,-1.1,1.1); ctx.stroke();
+    ctx.strokeStyle='#d8d0bc'; ctx.lineWidth=1;
+    ctx.beginPath();
+    ctx.moveTo(13,-26+bob); ctx.lineTo(9-pull,-18+bob); ctx.lineTo(13,-10+bob);
+    ctx.stroke();
+    ctx.fillStyle='#5a3a22';
+    ctx.fillRect(-11,-26+bob,4,12);
+    ctx.strokeStyle='#e8d9b0'; ctx.lineWidth=1;
+    for(let i=0;i<3;i++){ ctx.beginPath(); ctx.moveTo(-10+i*1.5,-26+bob); ctx.lineTo(-10+i*1.5,-31+bob); ctx.stroke(); }
+  } else {
+    ctx.strokeStyle='#b8bec4'; ctx.lineWidth=2;
+    ctx.save();
+    ctx.translate(7,-18+bob); ctx.rotate(-0.5+Math.sin(e.step*2)*0.2);
+    ctx.beginPath(); ctx.moveTo(0,0); ctx.quadraticCurveTo(9,-2,12,-7); ctx.stroke();
+    ctx.restore();
+  }
+  ctx.restore();
+  if(e.hp<e.max) hpBar(px,py-(e.type==='rider'?52:42),e.hp/e.max,26);
+}
+function drawGhost(){
+  if(!hoverTile) return;
+  const [txs,tys]=hoverTile;
+  if(!inGrid(txs,tys)) return;
+  
+  // Якщо вибрано інструмент будови
+  if(G.tool) {
+    let ok = !blocked(txs,tys);
+    if (G.tool === 'pal') ok = ok && G.res.wood >= COST.pal;
+    if (G.tool === 'can') ok = ok && G.res.gold >= COST.can;
+
+    const sx=isoX(txs+.5,tys+.5), sy=isoY(txs,tys);
+    ctx.fillStyle=ok?'rgba(180,220,120,.3)':'rgba(220,90,70,.3)';
+    ctx.strokeStyle=ok?'rgba(180,220,120,.8)':'rgba(220,90,70,.8)';
+    ctx.beginPath();
+    ctx.moveTo(sx,sy); ctx.lineTo(sx+TW/2,sy+TH/2); ctx.lineTo(sx,sy+TH); ctx.lineTo(sx-TW/2,sy+TH/2);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    if(G.tool==='can'){
+      ctx.strokeStyle='rgba(240,200,90,.35)'; ctx.lineWidth=1.5;
+      ctx.beginPath();
+      for(let a=0;a<=32;a++){
+        const t=a/32*Math.PI*2;
+        const wx=txs+.5+Math.cos(t)*3.6, wy=tys+.5+Math.sin(t)*3.6;
+        const X=isoX(wx,wy), Y=isoY(wx,wy);
+        a?ctx.lineTo(X,Y):ctx.moveTo(X,Y);
+      }
+      ctx.closePath(); ctx.stroke();
+    }
+  } 
+  // Підсвітка ресурсу, якщо інструмент НЕ вибрано
+  else if (G.mapRes.has(key(txs, tys))) {
+    const sx=isoX(txs+.5,tys+.5), sy=isoY(txs,tys);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+    ctx.beginPath();
+    ctx.moveTo(sx,sy); ctx.lineTo(sx+TW/2,sy+TH/2); ctx.lineTo(sx,sy+TH); ctx.lineTo(sx-TW/2,sy+TH/2);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+  }
+}
+function drawFlow(){
+  if(!G.flow) return;
+  ctx.strokeStyle='rgba(255,120,80,.55)'; ctx.lineWidth=1.5;
+  for(let y=0;y<GH;y++)for(let x=0;x<GW;x++){
+    const i=idx(x,y);
+    const dx=G.flow.dir[i*2], dy=G.flow.dir[i*2+1];
+    if(!dx&&!dy) continue;
+    const cx=x+.5, cy=y+.5;
+    const l=Math.hypot(dx,dy)||1;
+    const ax=cx+dx/l*.35, ay=cy+dy/l*.35;
+    const X1=isoX(cx,cy), Y1=isoY(cx,cy), X2=isoX(ax,ay), Y2=isoY(ax,ay);
+    ctx.beginPath(); ctx.moveTo(X1,Y1); ctx.lineTo(X2,Y2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(X2,Y2,2,0,7); ctx.fillStyle='rgba(255,120,80,.7)'; ctx.fill();
+  }
+}
+function render(){
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  const shx=(Math.random()-.5)*G.shake, shy=(Math.random()-.5)*G.shake;
+  ctx.clearRect(0,0,innerWidth,innerHeight);
+  
+  ctx.save();
+  ctx.translate(shx, shy);
+  
+  const sky = ctx.createLinearGradient(0,0,0,innerHeight);
+  sky.addColorStop(0,'#2b3a4d'); sky.addColorStop(.45,'#5a5a3f');
+  sky.addColorStop(.46,'#3a4423'); sky.addColorStop(1,'#232b14');
+  ctx.fillStyle = sky; 
+  ctx.fillRect(-20, -20, innerWidth+40, innerHeight+40);
+  
+  ctx.fillStyle='rgba(240,230,200,.9)';
+  ctx.beginPath(); ctx.arc(innerWidth*.82, innerHeight*.25, 22, 0, 7); ctx.fill();
+  ctx.fillStyle='rgba(240,230,200,.15)';
+  ctx.beginPath(); ctx.arc(innerWidth*.82, innerHeight*.25, 34, 0, 7); ctx.fill();
+
+  ctx.drawImage(groundCv, ox - 1200, oy - 60, 2400, 1200);
+
+  if(showFlow) drawFlow();
+  drawGhost();
+
+  const items=[];
+  items.push({d:SICH.cx+SICH.cy, f:drawSich});
+  
+  for(const [k,s] of G.structures){
+    const [txs,tys]=k.split(',').map(Number);
+    items.push({d:txs+tys+1, f:()=> s.type==='pal'?drawPalisade(txs,tys,s):drawCannon(txs,tys,s)});
+  }
+  for(const [k, res] of G.mapRes){
+    const [txs,tys]=k.split(',').map(Number);
+    items.push({d:txs+tys+0.1, f:()=> drawMapResource(txs, tys, res)});
+  }
+  for(const e of G.enemies) items.push({d:e.x+e.y, f:()=>drawEnemy(e)});
+  for(const p of G.peasants) items.push({d:p.x+p.y, f:()=>drawPeasant(p)});
+  items.push({d:G.player.x+G.player.y, f:drawCossack});
+  
+  items.sort((a,b)=>a.d-b.d);
+  for(const it of items) it.f();
+
+  for(const pr of G.projectiles){
+    const px=isoX(pr.x,pr.y), py=isoY(pr.x,pr.y)-pr.z;
+    ctx.fillStyle='#22201c';
+    ctx.beginPath(); ctx.arc(px,py,4,0,7); ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,.25)';
+    ctx.beginPath(); ctx.arc(px-1,py-1,1.5,0,7); ctx.fill();
+  }
+  for(const a of G.arrows){
+    const px=isoX(a.x,a.y), py=isoY(a.x,a.y)-a.z;
+    const ex=isoX(a.x-a.vx*.06,a.y-a.vy*.06), ey=isoY(a.x-a.vx*.06,a.y-a.vy*.06)-a.z;
+    ctx.strokeStyle='#e8d9b0'; ctx.lineWidth=1.6;
+    ctx.beginPath(); ctx.moveTo(px,py); ctx.lineTo(ex,ey); ctx.stroke();
+  }
+  for(const pt of G.particles){
+    ctx.globalAlpha=Math.max(0,pt.life/pt.max);
+    ctx.fillStyle=pt.color;
+    const px=isoX(pt.x,pt.y), py=isoY(pt.x,pt.y)-pt.z;
+    ctx.fillRect(px-pt.size/2,py-pt.size/2,pt.size,pt.size);
+  }
+  ctx.globalAlpha=1;
+  ctx.textAlign='center'; ctx.font='bold 14px Georgia';
+  for(const f of G.floaters){
+    ctx.globalAlpha=Math.min(1,f.life*2);
+    ctx.fillStyle='#000';
+    ctx.fillText(f.text,isoX(f.x,f.y)+1,isoY(f.x,f.y)-f.z+1);
+    ctx.fillStyle=f.color;
+    ctx.fillText(f.text,isoX(f.x,f.y),isoY(f.x,f.y)-f.z);
+  }
+  ctx.globalAlpha=1;
+  ctx.restore();
+}
+
+/* ---------- цикл ---------- */
+let lastT=0;
+function loop(t){
+  requestAnimationFrame(loop);
+  const dt=Math.min(0.05,(t-lastT)/1000); lastT=t;
+  if(G&&G.running&&!G.over) update(dt);
+  if(G) render();
+}
+function gameOver(){
+  G.over=true; G.running=false;
+  $('endTitle').textContent='Січ впала…';
+  $('stats').innerHTML=`Ти протримався до <b>${G.wave}-ї хвилі</b><br>і порубав <b>${G.kills}</b> ворогів.`;
+  $('endOv').classList.remove('hidden');
+}
+function startGame(){
+  G=freshState();
+  recomputeFlow();
+  G.running=true;
+  selectTool(null);
+  $('startOv').classList.add('hidden');
+  $('endOv').classList.add('hidden');
+  showBanner('Готуйся: перший набіг за 15 с');
+}
+$('startBtn').onclick=startGame;
+$('againBtn').onclick=startGame;
+
+G=freshState();
+recomputeFlow();
+resize();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
